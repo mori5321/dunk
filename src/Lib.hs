@@ -12,7 +12,6 @@ module Lib
     ( run
     ) where
 
-
 import Dhall.JSON
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
@@ -55,16 +54,19 @@ parseDhall filePath dhallText = codeToValue defaultConversion ForbidWithinJSON (
     where
         dhallText' = T.pack dhallText
 
-tmpFilePath :: String
-tmpFilePath = "./dhall/login.dhall"
 
-
--- readDhallFile :: FilePath -> IO String
--- readDhallFile filePath = do
---     dhall <- readFile filePath
+dunkToRequest :: DunkRequest -> IO H.Request 
+dunkToRequest dReq = do
+    request <- H.parseRequest url
+    pure $ request { H.method = BSU.fromString $ method dReq
+            , H.requestBody = H.RequestBodyLBS reqBody'
+            , H.requestHeaders = headers'
+            }
+    where
+        url = baseUrl dReq ++ path dReq
+        reqBody' = encode $ fromMaybe "" (reqBody dReq)
+        headers' = map mkHeader $ M.toList $ headers dReq
         
-
-    -- json <- encode <$> parseDhall filePath dhall
 
 run :: IO ()
 run = do
@@ -76,30 +78,15 @@ run = do
     dhall <- readFile filePath
     json <- encode <$> parseDhall filePath dhall
 
+    request <- case decode json :: Maybe DunkRequest of
+      Nothing -> error "Invalid Request"
+      Just req -> dunkToRequest req
+          
+
     manager <- H.newManager H.defaultManagerSettings
 
-    case decode json :: Maybe DunkRequest of
-        Nothing -> print "Parse Error"
-        Just req -> do
-            -- 2. Dhall Request to HTTP Reqquest
-            let url = baseUrl req ++ path req
-            request' <- H.parseRequest url
-
-            let reqBody' =  encode $ fromMaybe "" (reqBody req)
-            let headers' = M.toList $ headers req
-            let headers'' = map mkHeader headers'
-            let request = request'
-                    { H.method = BSU.fromString $ method req
-                    , H.requestBody = H.RequestBodyLBS reqBody'
-                    , H.requestHeaders = headers''
-                    }
-
-            -- 3. Send Request and Receive Response
-            response <- H.httpLbs request manager
-            let body = H.responseBody response
-
-            -- 4. Presentation
-            putStrLn $ BLU.toString body
-
-
+    response <- H.httpLbs request manager
+    let body = H.responseBody response
     
+    putStrLn $ BLU.toString body
+
