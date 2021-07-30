@@ -1,3 +1,3 @@
-# Changelog for dunk3
+# Changelog for dunk
 
 ## Unreleased changes
