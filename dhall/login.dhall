@@ -18,7 +18,7 @@ let req
                       { logIn =
                           JSON.object
                             ( toMap
-                                { email = JSON.string "mosss@hoge.com"
+                                { email = JSON.string "mossss@hoge.com"
                                 , password = JSON.string "password"
                                 }
                             )
