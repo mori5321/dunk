@@ -1,2 +1,2 @@
 # dunk
-Dhall Base http request client. (experimental)
+Dhall-based http request client. (experimental)
